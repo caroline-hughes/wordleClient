@@ -17,7 +17,7 @@ and then complete the protocol normally (i.e., hello, start, guess, retry, and b
 You may assume that the server’s TLS port is 27994,
 unless the port is overridden on the command line using the -p option.
 
-
+$ ./client <-p port> <-s> <hostname> <Northeastern-username>
 
 the server may send corrupted messages just to try and crash your software. 
 If a received message is not as expected, such as an incorrect field or wrong message type, 

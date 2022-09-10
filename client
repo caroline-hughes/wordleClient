@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+import sys, argparse, logging, random
+
+# play wordle baby!!!!
+def client(args, loglevel):
+  logging.basicConfig(format="%(levelname)s: %(message)s", level=loglevel)
+
+  print('Number of arguments:', len(sys.argv), 'arguments.')
+  print('Argument List:', str(sys.argv))
+
+  useTLS = bool(args.tls)
+  
+  print("done")
+ 
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description='Lets play wordle.')
+  parser.add_argument('-s', dest='tls', action='store_true')
+  parser.set_defaults(tls=False)
+  parser.add_argument(
+                      "-p",
+                      metavar="port",
+                      default=27993,
+                      help="pass -p with your TLS port")
+  parser.add_argument('hostname', metavar='hostname', type=str, nargs=1,
+                    help='the hostname')
+  parser.add_argument('Northeastern-username', metavar='username', type=str, nargs=1,
+                    help='your Northeastern username')
+  args = parser.parse_args()
+  
+  loglevel = logging.INFO
+  
+  client(args, loglevel)
