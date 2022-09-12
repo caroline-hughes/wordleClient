@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 import sys, argparse, logging, random, socket, json
 
-
-
-
 def sendMessage(s: socket, m: object):
-  print('\nsending msg:', m)
+  print('\nsending:', m)
   msg = (json.dumps(m) + "\n").encode()
   totalsent = 0
   while totalsent < len(msg):
@@ -16,12 +13,12 @@ def sendMessage(s: socket, m: object):
   # print("totalsent=", totalsent)
 
 def receieveMessage(s):
-  print('\nreceiving...')
+  # print('\nreceiving...')
   buffer = ''
   try:
       while "\n" not in buffer: 
           data = s.recv(1024).decode('utf-8')
-          print("data =", data)
+          # print("data =", data)
           if not data:
               print("no more data to receive")
               break
@@ -30,15 +27,34 @@ def receieveMessage(s):
       print("Exception occurred in loop, exiting...", loopException)
 
   res = json.loads(buffer)
-  print('\nmsg received:', res)
-  # print('res[type]=', res['type'])
+  print('\nreceived:', res)
   if res['type'] != 'start' and res['type'] != 'retry' and res['type'] != 'bye' and res['type'] != 'error':
     print("\nrecieved invalid message type! closing connection\n")
 
   return res
-  # except:
-  #   print('\n errored in recieve')
 
+
+
+# until res type == bye (for testing: for 5 rounds)
+  # pick a random work to guess
+  # get res
+def runGuessLoop(s, id):
+  words = ['bluff', 'cheek', 'kitty', 'throw', 'steer']
+  count = 0
+  while count < 5:  # while res['type'] != 'bye' :
+    # GUESS
+    guess = {"type": "guess", "id": id, "word": words[count]}
+    sendMessage(s, guess) # send first guess
+    count += 1
+
+    # LISTEN
+    try:
+      res = receieveMessage(s) # listen for response to guess
+    except:
+      print('\ncouldnt get guess res')
+    
+  # print('\nyay i won')
+  # print('\nflag:', res['flag'])
 
 
 # play wordle baby!!!!
@@ -61,37 +77,26 @@ def client(args, loglevel):
   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   s.connect((host, port))
 
+  # HELLO
   try:
     hello = {"type": "hello", "northeastern_username": "hughes.ca"}
-    sendMessage(s, hello) # initiate connection
+    sendMessage(s, hello)
   except:
     print('\ncouldnt send first msg')
 
+  # START
   try:  
-    connectionID = receieveMessage(s)['id'] # listen for "start" response
+    connectionID = receieveMessage(s)['id']
   except:
     print('\ncouldnt get start res')
 
-  try:  
-    guess = {"type": "guess", "id": connectionID, "word": "cheek"}
-    sendMessage(s, guess) # send first guess
+  # GUESS LOOP
+  try:
+    runGuessLoop(s, connectionID)
   except:
-    print('\ncouldnt send first guess')
+    print('\nguess loop exception')
 
-  try:  
-    res = receieveMessage(s) # listen for response to guess
-    print('got response from guess', res)
-  except:
-    print('\ncouldnt get guess res. reconnecting...')
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((host, port))
-
-    guess = {"type": "guess", "id": connectionID, "word": "cheek"}
-    sendMessage(s, guess) # send first guess
-    res = receieveMessage(s) # listen for response to guess
-    print('got response from guess', res)
-
-  print("done")
+  print("\n")
 
 
 
