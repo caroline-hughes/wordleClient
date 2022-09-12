@@ -6,7 +6,7 @@ can be stateless, you recieve your guesses in the json each 'retry'
 
 use library for encoding/parsing json
 
-
+server runs on proj1.3700.network
 
 --> optional params:
 
@@ -18,6 +18,10 @@ You may assume that the server’s TLS port is 27994,
 unless the port is overridden on the command line using the -p option.
 
 $ ./client <-p port> <-s> <hostname> <Northeastern-username>
+
+Each message is an ASCII string consisting of multiple fields separated by spaces (0x20) 
+and terminated with a line feed (0x0A, \n). 
+Messages are case sensitive.
 
 the server may send corrupted messages just to try and crash your software. 
 If a received message is not as expected, such as an incorrect field or wrong message type, 
@@ -33,9 +37,16 @@ default
   error
 
 
+The protocol works as follows. 
+The client initiates the protocol by creating a TCP socket connection to the server. 
+  how? lmao
+
+Once the socket is connected, the client sends a hello message to the server.
+
+
 eg
 
-C -> S: {"type": "hello", "northeastern_username": "amislove}\n
+C -> S: {"type": "hello", "northeastern_username": "amislove"}\n
 S -> C: {"type": "start", "id": "foo"}\n
 C -> S: {"type": "guess", "id": "foo", "word": "treat"}\n
 S -> C: {"type": "retry", "id": "foo", "guesses": [{ "word": "treat", "marks": [1, 0, 2, 2, 0]}]}\n
