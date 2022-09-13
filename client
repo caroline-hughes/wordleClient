@@ -8,6 +8,7 @@ def sendMessage(s: socket, messageToSend: object):
   msg = (json.dumps(messageToSend) + "\n").encode()
   totalBytesSent = 0
   while totalBytesSent < len(msg):
+      # help from: https://docs.python.org/3/howto/sockets.html
       nextSent = s.send(msg[totalBytesSent:])
       if nextSent == 0:
           raise RuntimeError("lost socket connection")
@@ -79,16 +80,26 @@ def client(args, loglevel):
   wordsfile.close()
 
   # print(args)
-  # print('Number of arguments:', len(sys.argv), 'arguments.')
-  # print('Argument List:', str(sys.argv))
-  # useTLS = bool(args.tls)
-  # host = str(args.hostname)
-  # port = int(args.p)  
+  # print('Argument List:', str(sys.argv), '\n')
 
-  # hard code for now
-  host = "proj1.3700.network"
-  port = 27993 
-  # tlsPort = 27994
+  useTLS = bool(args.tls)
+  port = int(args.p)  
+
+  # need better way to do this
+  if sys.argv.count("-s") > 0:
+    sys.argv.remove('-s')
+
+  if sys.argv.count("-p") > 0:
+    sys.argv.remove('-p')
+    sys.argv.remove(args.p)
+
+  host = sys.argv[1]
+  username = sys.argv[2]
+
+  print('host:', host)
+  print('username:', username)
+  print('port:', port)
+  print('tls?', useTLS)
 
   # create an INET, STREAMing socket
   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -122,11 +133,9 @@ if __name__ == '__main__':
                       help="pass -p with your TLS port")
 
   # specifies the name of the server (either a DNS name or an IP address in dotted notation)
-  parser.add_argument('hostname', metavar='hostname', type=str, nargs=1,
-                    help='the hostname')
+  parser.add_argument('hostname', type=str, nargs=1, help='the hostname')
 
-  parser.add_argument('Northeastern-username', metavar='username', type=str, nargs=1,
-                    help='your Northeastern username')
+  parser.add_argument('Northeastern-username', type=str, nargs=1, help='your Northeastern username')
   args = parser.parse_args()
   
   loglevel = logging.INFO
