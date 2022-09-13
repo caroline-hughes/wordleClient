@@ -2,26 +2,22 @@
 from array import array
 import sys, argparse, logging, socket, json, ssl
 
-
-# send a message over the socket
 def sendMessage(s: socket, messageToSend: object):
-  # print('\nsending:', messageToSend)
   msg = (json.dumps(messageToSend) + "\n").encode()
   totalBytesSent = 0
   while totalBytesSent < len(msg):
-      # help from: https://docs.python.org/3/howto/sockets.html
+      # send logic inspiration: https://docs.python.org/3/howto/sockets.html
       nextSent = s.send(msg[totalBytesSent:])
       if nextSent == 0:
           raise RuntimeError("lost socket connection")
       totalBytesSent = totalBytesSent + nextSent
 
-# receieve a message over the socket
 def receieveMessage(s: socket):
   buffer = ''
   try:
       while "\n" not in buffer: 
           data = s.recv(1024).decode('utf-8')
-          # help from: https://stackoverflow.com/questions/55922194/python-breaks-string-after-first-character
+          # buffer logic inspiration: https://stackoverflow.com/questions/55922194/python-breaks-string-after-first-character
           if not data:
               break
           buffer += data
@@ -29,26 +25,18 @@ def receieveMessage(s: socket):
       print("Exception occurred in loop, exiting...", loopException)
 
   res = json.loads(buffer)
-  # print('\nreceived:', res)
-
-  # guard against other messages than those of expected types
   if res['type'] != 'start' and res['type'] != 'retry' and res['type'] != 'bye' and res['type'] != 'error':
-    # print("\nrecieved invalid message type, closing connection\n")
     s.close()
-
   return res
 
-# the loop for choosing a guess, listening for the response, and 
-# modifying the words list before the next guess based on the marks of the previous guesses
 def runGuessLoop(s, id, wlist):
   wordsList = wlist
   res = {}
   count = 0
 
-  # while it's the first guess or no previous guess has been correct
   while res == {} or res['type'] != 'bye':
 
-    # filter words array based on incorrect guesses
+    # filter words list based on previous guess characters' marks
     if res != {}:
       curGuess = res['guesses'][count]['word']
       guessMarks: array = res['guesses'][count]['marks']
@@ -62,12 +50,13 @@ def runGuessLoop(s, id, wlist):
         if mark == 2:
           wordsList = list(filter(lambda w: w[index] == curGuess[index], wordsList))
     
-    # guess the first in words array
+    # guess the first in words list
     guess = {"type": "guess", "id": id, "word": wordsList[0]}
     sendMessage(s, guess)
 
+    # listen for response from server
     try:
-      res = receieveMessage(s) # listen for response
+      res = receieveMessage(s) 
     except:
       print('\ncouldnt get guess response')
 
@@ -77,29 +66,19 @@ def runGuessLoop(s, id, wlist):
 def client(args, loglevel):
   logging.basicConfig(format="%(levelname)s: %(message)s", level=loglevel)
 
-  # text file --> array of strings
+  # turn text file into array of strings
   wordsfile = open("project1-words.txt", "r")
   wordsList = wordsfile.read().split('\n')
   wordsfile.close()
 
-  # print(args)
-  # print('Argument List:', str(sys.argv), '\n')
-
   useTLS = bool(args.tls)
-  # port = int(args.p)  
-
-  # if they want tls but dont specify port, use 27994
   if useTLS and sys.argv.count("-p") == 0:
     port = 27994
-  
-  # otherwise, either they specified it, or the default 27994 will be used
   else:
     port = int(args.p)  
 
-  # need better way to do this
   if sys.argv.count("-s") > 0:
     sys.argv.remove('-s')
-
   if sys.argv.count("-p") > 0:
     sys.argv.remove('-p')
     sys.argv.remove(args.p)
@@ -107,20 +86,16 @@ def client(args, loglevel):
   host = sys.argv[1]
   username = sys.argv[2]
 
-  # print('host:', host)
-  # print('username:', username)
-  # print('port:', port)
-  # print('tls?', useTLS)
-
-  # create an INET, STREAMing socket
+  # create STREAMing socket
   sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
   contextInstance = ssl.SSLContext()
   if useTLS:
-    sslSocket = contextInstance.wrap_socket(sock)
+    sslSock = contextInstance.wrap_socket(sock)
 
-  s = sslSocket if useTLS else sock
+  s = sslSock if useTLS else sock
 
+  # CONNECT
   s.connect((host, port))
 
   # HELLO
@@ -147,6 +122,7 @@ if __name__ == '__main__':
   parser.add_argument("-p", metavar="PORT", default=27993, help="pass -p with your desired TLS port")
   parser.add_argument('hostname', type=str, nargs=1, help='the hostname')
   parser.add_argument('Northeastern-username', type=str, nargs=1, help='your Northeastern username')
+  
   args = parser.parse_args()
   
   loglevel = logging.INFO
