@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from array import array
-import sys, argparse, logging, socket, json
+import sys, argparse, logging, socket, json, ssl
+
 
 # send a message over the socket
 def sendMessage(s: socket, messageToSend: object):
@@ -85,7 +86,15 @@ def client(args, loglevel):
   # print('Argument List:', str(sys.argv), '\n')
 
   useTLS = bool(args.tls)
-  port = int(args.p)  
+  # port = int(args.p)  
+
+  # if they want tls but dont specify port, use 27994
+  if useTLS and sys.argv.count("-p") == 0:
+    port = 27994
+  
+  # otherwise, either they specified it, or the default 27994 will be used
+  else:
+    port = int(args.p)  
 
   # need better way to do this
   if sys.argv.count("-s") > 0:
@@ -104,7 +113,14 @@ def client(args, loglevel):
   # print('tls?', useTLS)
 
   # create an INET, STREAMing socket
-  s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+  contextInstance = ssl.SSLContext()
+  if useTLS:
+    sslSocket = contextInstance.wrap_socket(sock)
+
+  s = sslSocket if useTLS else sock
+
   s.connect((host, port))
 
   # HELLO
@@ -125,18 +141,11 @@ def client(args, loglevel):
 
 
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(description='Lets play wordle.')
+  parser = argparse.ArgumentParser(description='Wordle player')
   parser.add_argument('-s', dest='tls', action='store_true')
   parser.set_defaults(tls=False)
-  parser.add_argument(
-                      "-p",
-                      metavar="PORT",
-                      default=27993,
-                      help="pass -p with your TLS port")
-
-  # specifies the name of the server (either a DNS name or an IP address in dotted notation)
+  parser.add_argument("-p", metavar="PORT", default=27993, help="pass -p with your desired TLS port")
   parser.add_argument('hostname', type=str, nargs=1, help='the hostname')
-
   parser.add_argument('Northeastern-username', type=str, nargs=1, help='your Northeastern username')
   args = parser.parse_args()
   
