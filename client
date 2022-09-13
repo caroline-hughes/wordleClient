@@ -4,7 +4,7 @@ import sys, argparse, logging, socket, json
 
 # send a message over the socket
 def sendMessage(s: socket, messageToSend: object):
-  print('\nsending:', messageToSend)
+  # print('\nsending:', messageToSend)
   msg = (json.dumps(messageToSend) + "\n").encode()
   totalBytesSent = 0
   while totalBytesSent < len(msg):
@@ -28,11 +28,11 @@ def receieveMessage(s: socket):
       print("Exception occurred in loop, exiting...", loopException)
 
   res = json.loads(buffer)
-  print('\nreceived:', res)
+  # print('\nreceived:', res)
 
   # guard against other messages than those of expected types
   if res['type'] != 'start' and res['type'] != 'retry' and res['type'] != 'bye' and res['type'] != 'error':
-    print("\nrecieved invalid message type, closing connection\n")
+    # print("\nrecieved invalid message type, closing connection\n")
     s.close()
 
   return res
@@ -70,6 +70,8 @@ def runGuessLoop(s, id, wlist):
     except:
       print('\ncouldnt get guess response')
 
+  print(res['flag'])
+
 
 def client(args, loglevel):
   logging.basicConfig(format="%(levelname)s: %(message)s", level=loglevel)
@@ -96,10 +98,10 @@ def client(args, loglevel):
   host = sys.argv[1]
   username = sys.argv[2]
 
-  print('host:', host)
-  print('username:', username)
-  print('port:', port)
-  print('tls?', useTLS)
+  # print('host:', host)
+  # print('username:', username)
+  # print('port:', port)
+  # print('tls?', useTLS)
 
   # create an INET, STREAMing socket
   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -107,7 +109,7 @@ def client(args, loglevel):
 
   # HELLO
   try:
-    hello = {"type": "hello", "northeastern_username": "hughes.ca"}
+    hello = {"type": "hello", "northeastern_username": username}
     sendMessage(s, hello)
   except:
     print('\ncouldnt send first msg')
