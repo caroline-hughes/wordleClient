@@ -22,7 +22,7 @@ def receieveMessage(s: socket):
               break
           buffer += data
   except Exception as loopException:
-      print("Exception occurred in loop, exiting...", loopException)
+      print("Exception occurred in loop:", loopException)
 
   res = json.loads(buffer)
   if res['type'] != 'start' and res['type'] != 'retry' and res['type'] != 'bye' and res['type'] != 'error':
@@ -58,7 +58,7 @@ def runGuessLoop(s, id, wlist):
     try:
       res = receieveMessage(s) 
     except:
-      print('\ncouldnt get guess response')
+      print('could not get guess response')
 
   print(res['flag'])
 
@@ -103,16 +103,16 @@ def client(args, loglevel):
     hello = {"type": "hello", "northeastern_username": username}
     sendMessage(s, hello)
   except:
-    print('\ncouldnt send first msg')
+    print('could not send first message')
 
-  # START
   try:  
+    # START
     connectionID = receieveMessage(s)['id']
-  except:
-    print('\ncouldnt get start res')
 
-  # GUESS LOOP
-  runGuessLoop(s, connectionID, wordsList)
+    # GUESS LOOP
+    runGuessLoop(s, connectionID, wordsList)
+  except:
+    print('start message not receieved or guess loop error')
 
 
 if __name__ == '__main__':
