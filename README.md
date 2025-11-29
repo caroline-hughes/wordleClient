@@ -6,7 +6,7 @@ The client connects to a remote Wordle server using raw TCP or TLS, negotiates a
 ## Running the Client
 
 ```bash
-./client [-s] [-p PORT] <hostname> <username>
+./wordle_client [-s] [-p PORT] <hostname> <username>
 ```
 
 ## Overview
