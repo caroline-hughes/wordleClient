@@ -1,35 +1,60 @@
-Client that plays Wordle using an INET STREAMing socket, with the option to specify a port and the use of an ssl socket.
+# Wordle Client over TCP/TLS
 
-To use, run the script from the command line with the form:
+A fully autonomous Wordle-playing client implemented in Python.  
+The client connects to a remote Wordle server using raw TCP or TLS, negotiates a custom JSON protocol, and solves the puzzle using constraint-based filtering.
 
+## Running the Client
+
+```bash
+./client [-s] [-p PORT] <hostname> <username>
 ```
-$ ./client <-p port> <-s> <hostname> <Northeastern-username>
-```
 
-If not specified, the port will be 27993 and the hostname will be "proj1.3700.network".
+## Overview
 
-My high-level approach to completing this assignment:
-1. Re-learn/learn the basics of python3 scripts, argument parsing, etc.
-2. Complete logic for sending the proper "hello" message. Abstract this socket.send() logic to be used for sending any message.
-3. Complete logic to listen for the "start" response. Abstract this socket.recv() logic to be used for receiving any message.
-4. Implement one loop of guessing (with a hard-coded test word) and receiving proper response from the server.
-5. Write logic for adjusting the words list each guess based on the given marks (see guessing strategy below).
-6. Implement complete loop for guessing until "bye" type is received, returning the flag from that response.
-7. Researching how ssl python library works, and utilizing it to add tls support.
+This project implements a complete networked Wordle client with:
 
-A challenge:
-I would say the hardest part of this assignement for me was understanding how sending and receiving bytes over the socket worked. For a while, it was hard for me to test my client easily, because the try block of my receieveMessage function was running for ~2 minutes each time. Ultimately, changing from "while True" (and break-ing once !data) to "while '\n' not in buffer" (stopping at the first sight of a newline character, with the knowledge that the message has ended), fixed this problem, and I was able to test via the command line much easier.
+-   **INET streaming sockets** (TCP)
+-   Optional **TLS encryption** via Python’s `ssl` module
+-   A custom **JSON message protocol** (`hello` → `start` → `guess` → `retry` → `bye`)
+-   A fully automatic **Wordle-solving algorithm**
+-   Manual **send/receive loops** that handle message framing over an unstructured stream
+-   A dynamic **wordlist pruning algorithm** based on exact/partial/no-match marks
 
-Guessing strategy:
-My runGuessLoop function handles the guessing for my client. Initially it receives the wordslist as an array, and it will trim the wordslist each time a new response to a guess has been received. Essentially, for each previous guess and its marks array, we traverse each character of that guess in addition to the mark associated with that character. 
-- If the char corresponded to a 0 or 1, I filter the wordslist by words without that char in that index.  
-- If the char corresponded to a 1, I filter the wordslist by words which contain that char somewhere.
-- If the char corresponded to a 2, I filter the wordslist by words which contain that char at that index.
+It communicates with a remote server that sends marks for each guess, and the client reduces the search space until it finds the solution.
 
-Testing:
-Command line print statements were my primary form of testing and debugging my functionality. At each step of implementation, I was using print statements to see things like
-- the command line arguments that were being used to instantiate the socket
-- the format of the messages I was sending and receiving, 
-- the number bytes being sent or received and added to buffer, 
-- the progression of my guesses based on the wordlist filtering logic,
-- which try catch blocks were catching errors
+---
+
+## Features
+
+### **Socket-Level Networking**
+
+-   Manual `send()` loop that ensures all bytes are transmitted
+-   Streaming `recv()` until a newline terminator is received
+-   Automatic buffer accumulation and message framing
+-   Proper error paths for disconnects and partial reads
+
+### **TLS Support**
+
+-   Optional `-s` flag enables TLS
+-   Uses `ssl.SSLContext().wrap_socket()`
+-   Defaults to alternate TLS port when enabled
+
+### **Wordle Solving Algorithm**
+
+Implements constraint propagation based on server-provided marks:
+
+-   **Green (2):** keep only words with matching letter in that index
+-   **Yellow (1):** keep words containing the letter (but not at that index)
+-   **Grey (0):** prune words with that letter at that index
+
+The algorithm progressively trims the candidate list and always guesses the first remaining candidate.
+
+### **Message Protocol**
+
+All messages follow a newline-terminated JSON format:
+
+-   `hello`
+-   `start` (contains connection ID)
+-   `guess`
+-   `retry`
+-   `bye` (contains final flag)
